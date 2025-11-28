@@ -75,6 +75,7 @@ AIRTABLE_CLIENT_ID=<your_client_id>
 AIRTABLE_CLIENT_SECRET=<your_client_secret>
 AIRTABLE_REDIRECT_URI=http://localhost:5000/auth/airtable/callback
 FRONTEND_URL=http://localhost:3000
+BACKEND_URL=http://localhost:5000
 
 ```
 

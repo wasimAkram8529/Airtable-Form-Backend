@@ -1,6 +1,7 @@
 const express = require("express");
 const createAirtableClient = require("../utils/airtableClient");
 const { authUser } = require("../middleware/auth");
+const { BACKEND_URL } = require("../config");
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router.post("/register", authUser, async (req, res) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          notificationUrl: `http://localhost:5000/webhooks/airtable`,
+          notificationUrl: `${BACKEND_URL}/webhooks/airtable`,
           specification: {
             options: {
               filters: {
