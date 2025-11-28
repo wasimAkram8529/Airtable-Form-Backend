@@ -62,9 +62,14 @@ router.get("/airtable/login-status", (req, res) => {
 });
 
 router.post("/airtable/logout", (req, res) => {
-  res.clearCookie("userId");
-  res.clearCookie("oauth_state");
-  res.clearCookie("code_verifier");
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  };
+  res.clearCookie("userId", cookieOptions);
+  res.clearCookie("oauth_state", cookieOptions);
+  res.clearCookie("code_verifier", cookieOptions);
 
   if (req.session) {
     req.session.destroy(() => {});
