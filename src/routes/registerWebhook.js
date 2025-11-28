@@ -1,7 +1,7 @@
 const express = require("express");
-const createAirtableClient = require("../utils/airtableClient");
 const { authUser } = require("../middleware/auth");
 const { BACKEND_URL } = require("../config");
+const Form = require("../models/Form");
 
 const router = express.Router();
 
@@ -45,6 +45,22 @@ router.post("/register", authUser, async (req, res) => {
     }
 
     const result = JSON.parse(text);
+
+    const updatedForm = await Form.findOneAndUpdate(
+      { airtableBaseId: baseId, airtableTableId: tableId },
+      {
+        webhookId: result.id,
+        lastWebhookCursor: result.cursorForNextPayload,
+      },
+      { new: true }
+    );
+
+    if (!updatedForm) {
+      console.warn(
+        "Warning: Webhook created but Form not found in DB to update."
+      );
+    }
+
     res.json({ webhook: result });
   } catch (error) {
     console.error("Webhook Setup Error:", error);
