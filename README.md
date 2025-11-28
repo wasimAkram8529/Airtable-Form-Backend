@@ -55,13 +55,13 @@ A full stack application that allows user to authenticate it self and create cus
 ## Clone Repository
 
 ```sh
-git clone https://github.com/wasimAkram8529/Ansible-Form-Backend.git
+git clone https://github.com/wasimAkram8529/Airtable-Form-Backend.git
 ```
 
 ## Backend Setup
 
 ```sh
-cd Ansible-Form-Backend
+cd Airtable-Form-Backend
 npm install
 ```
 
