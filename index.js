@@ -3,13 +3,13 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
-const { PORT, MONGO_URI, FRONTEND_URL } = require("./config");
+const { PORT, MONGO_URI, FRONTEND_URL } = require("./src/config");
 
-const authRoutesHandler = require("./routes/auth");
-const airtableRoutesHandler = require("./routes/airtable");
-const formsRoutesHandler = require("./routes/form");
-const webhooksRoutesHandler = require("./routes/webhooks");
-const registerRoutesHandler = require("./routes/registerWebhook");
+const authRoutesHandler = require("./src/routes/auth");
+const airtableRoutesHandler = require("./src/routes/airtable");
+const formsRoutesHandler = require("./src/routes/form");
+const webhooksRoutesHandler = require("./src/routes/webhooks");
+const registerRoutesHandler = require("./src/routes/registerWebhook");
 
 const app = express();
 
