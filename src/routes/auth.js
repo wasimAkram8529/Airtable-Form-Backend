@@ -137,8 +137,10 @@ router.get("/airtable/callback", async (req, res) => {
     await user.save();
 
     res.cookie("userId", user._id.toString(), {
-      httpOnly: false,
-      sameSite: "lax",
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.redirect(FRONTEND_URL);
