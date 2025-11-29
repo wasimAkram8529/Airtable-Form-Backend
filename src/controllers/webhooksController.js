@@ -10,14 +10,14 @@ const createAirtableSyncDB = async (req, res) => {
 
   res.status(200).send({ success: true });
 
-  const payload = req.body;
-  if (!payload.base || !payload.webhook) return;
+  const webhookPayload = req.body;
+  if (!webhookPayload?.base?.id || !webhookPayload?.webhook?.id) return;
 
-  const baseId = payload.base.id;
-  const webhookId = payload.webhook.id;
+  const baseId = webhookPayload.base.id;
+  const webhookId = webhookPayload.webhook.id;
 
   try {
-    const form = await Form.findOne({ webhookId: webhookId });
+    const form = await Form.findOne({ webhookId });
 
     if (!form) {
       console.log(`No form found for webhook ID: ${webhookId}`);
@@ -27,55 +27,84 @@ const createAirtableSyncDB = async (req, res) => {
     const user = await User.findById(form.owner);
     if (!user) return;
 
-    let cursor = form.lastWebhookCursor || 1;
+    let currentCursor = form.lastWebhookCursor || 1;
+    console.log(
+      `Processing Webhook ${webhookId} starting at cursor ${currentCursor}`
+    );
 
-    console.log(`Processing Webhook ${webhookId} starting at cursor ${cursor}`);
+    const payloadUrl = `https://api.airtable.com/v0/bases/${baseId}/webhooks/${webhookId}/payloads?cursor=${currentCursor}`;
 
-    const url = `https://api.airtable.com/v0/bases/${baseId}/webhooks/${webhookId}/payloads?cursor=${cursor}`;
-
-    const response = await axios.get(url, {
+    const airtablePayloadResponse = await axios.get(payloadUrl, {
       headers: { Authorization: `Bearer ${user.airtableTokens.accessToken}` },
     });
 
-    const { payloads, cursor: nextCursor } = response.data;
+    const { payloads: airtablePayloadEvents, cursor: nextCursor } =
+      airtablePayloadResponse.data;
 
-    for (const p of payloads) {
-      if (p.changedTablesById) {
-        for (const tableId in p.changedTablesById) {
-          const changes = p.changedTablesById[tableId];
+    for (const webhookEvent of airtablePayloadEvents) {
+      if (!webhookEvent.changedTablesById) continue;
 
-          if (changes.destroyedRecordIds) {
-            for (const recordId of changes.destroyedRecordIds) {
-              await Response.findOneAndUpdate(
-                { airtableRecordId: recordId },
-                { status: "deletedInAirtable", deletedInAirtable: true }
-              );
-              console.log(`Synced Delete: ${recordId}`);
-            }
+      for (const affectedTableId in webhookEvent.changedTablesById) {
+        const recordChanges = webhookEvent.changedTablesById[affectedTableId];
+
+        if (recordChanges.destroyedRecordIds?.length) {
+          for (const deletedRecordId of recordChanges.destroyedRecordIds) {
+            await Response.findOneAndUpdate(
+              { airtableRecordId: deletedRecordId },
+              { status: "deletedInAirtable", deletedInAirtable: true },
+              { new: true }
+            );
+
+            console.log(
+              `Deleted in Airtable :-> Synced Mongo record: ${deletedRecordId}`
+            );
           }
+        }
 
-          if (changes.changedRecordsById) {
-            for (const recordId in changes.changedRecordsById) {
-              await Response.findOneAndUpdate(
-                { airtableRecordId: recordId },
-                { status: "updated" }
-              );
-              console.log(`Synced Update: ${recordId}`);
-            }
+        if (recordChanges.changedRecordsById) {
+          for (const updatedRecordId in recordChanges.changedRecordsById) {
+            console.log(`Updating record:-> ${updatedRecordId}`);
+
+            const updatedRecordResponse = await axios.get(
+              `https://api.airtable.com/v0/${baseId}/${form.airtableTableId}/${updatedRecordId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${user.airtableTokens.accessToken}`,
+                },
+              }
+            );
+
+            const updatedAnswers = updatedRecordResponse.data.fields || {};
+
+            const updatedResponseDocument = await Response.findOneAndUpdate(
+              { airtableRecordId: updatedRecordId },
+              {
+                status: "updated",
+                answers: updatedAnswers,
+                updatedAt: new Date(),
+              },
+              { new: true }
+            );
+
+            console.log(
+              updatedResponseDocument
+                ? `Synced update :-> ${updatedRecordId}`
+                : `Record ${updatedRecordId} exists in Airtable but not in MongoDB`
+            );
           }
         }
       }
     }
 
-    if (nextCursor && nextCursor > cursor) {
+    if (nextCursor && nextCursor > currentCursor) {
       form.lastWebhookCursor = nextCursor;
       await form.save();
-      console.log(`Cursor updated to ${nextCursor}`);
+      console.log(`Cursor updated :-> ${nextCursor}`);
     }
-  } catch (err) {
+  } catch (error) {
     console.error(
       "Webhook processing error:",
-      err.response?.data || err.message
+      error.response?.data || error.message
     );
   }
 };
