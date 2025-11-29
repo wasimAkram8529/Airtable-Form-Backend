@@ -1,6 +1,5 @@
 const Form = require("../models/Form.js");
 const Response = require("../models/Response.js");
-const { authUser } = require("../middleware/auth.js");
 const createAirtableClient = require("../utils/airtableClient.js");
 const { shouldShowQuestion } = require("../utils/conditionalLogic.js");
 
@@ -18,7 +17,45 @@ const createForm = async (req, res) => {
       questions,
     });
 
+    try {
+      const token = req.user.airtableTokens.accessToken;
+
+      const webhookRes = await fetch(
+        `https://api.airtable.com/v0/bases/${airtableBaseId}/webhooks`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            notificationUrl: `${BACKEND_URL}/webhooks/airtable`,
+            specification: {
+              options: {
+                filters: {
+                  dataTypes: ["tableData"],
+                  recordChangeScope: airtableTableId,
+                },
+              },
+            },
+          }),
+        }
+      );
+
+      const webhookData = await webhookRes.json();
+
+      if (!webhookRes.ok) {
+        console.error("Airtable Webhook Failed:", webhookData);
+      } else {
+        form.webhookId = webhookData.id;
+        form.lastWebhookCursor = webhookData.cursorForNextPayload;
+      }
+    } catch (webhookError) {
+      console.error("Webhook setup error:", webhookError);
+    }
+
     await form.save();
+
     res.json(form);
   } catch (error) {
     res.status(500).json({ error: error.message });
