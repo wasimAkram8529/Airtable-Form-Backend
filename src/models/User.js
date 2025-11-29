@@ -1,19 +1,22 @@
 const mongoose = require("mongoose");
 
-const AirtableTokenSchema = new mongoose.Schema({
-  accessToken: {
-    type: String,
-    required: true,
+const AirtableTokenSchema = new mongoose.Schema(
+  {
+    accessToken: {
+      type: String,
+      required: true,
+    },
+    refreshToken: {
+      type: String,
+      required: true,
+    },
+    expireAt: {
+      type: Date,
+      required: true,
+    },
   },
-  refreshToken: {
-    type: String,
-    required: true,
-  },
-  expireAt: {
-    type: Date,
-    required: true,
-  },
-});
+  { _id: false }
+);
 
 const UserSchema = new mongoose.Schema(
   {

@@ -1,64 +1,73 @@
 const mongoose = require("mongoose");
 
-const conditionSchema = new mongoose.Schema({
-  questionKey: {
-    type: String,
-    require: true,
+const conditionSchema = new mongoose.Schema(
+  {
+    questionKey: {
+      type: String,
+      require: true,
+    },
+    operator: {
+      type: String,
+      enum: ["equals", "notEquals", "contains"],
+      required: true,
+    },
+    value: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+    },
   },
-  operator: {
-    type: String,
-    enum: ["equals", "notEquals", "contains"],
-    required: true,
-  },
-  value: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true,
-  },
-});
+  { _id: false }
+);
 
-const ConditionalRulesSchema = new mongoose.Schema({
-  logic: {
-    type: String,
-    enum: ["AND", "OR"],
-    required: true,
+const ConditionalRulesSchema = new mongoose.Schema(
+  {
+    logic: {
+      type: String,
+      enum: ["AND", "OR"],
+      required: true,
+    },
+    conditions: [conditionSchema],
   },
-  conditions: [conditionSchema],
-});
+  { _id: false }
+);
 
-const QuestionSchema = new mongoose.Schema({
-  questionKey: {
-    type: String,
-    required: true,
+const QuestionSchema = new mongoose.Schema(
+  {
+    questionKey: {
+      type: String,
+      required: true,
+    },
+    airtableFieldId: {
+      type: String,
+      required: true,
+    },
+    label: {
+      type: String,
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: [
+        "shortText",
+        "longText",
+        "singleSelect",
+        "multiSelect",
+        "attachment",
+      ],
+      required: true,
+    },
+    required: {
+      type: Boolean,
+      default: false,
+    },
+    options: [String],
+    conditionalRules: {
+      type: ConditionalRulesSchema,
+      default: null,
+    },
   },
-  airtableFieldId: {
-    type: String,
-    required: true,
-  },
-  label: {
-    type: String,
-    required: true,
-  },
-  type: {
-    type: String,
-    enum: [
-      "shortText",
-      "longText",
-      "singleSelect",
-      "multiSelect",
-      "attachment",
-    ],
-    required: true,
-  },
-  required: {
-    type: Boolean,
-    default: false,
-  },
-  options: [String],
-  conditionalRules: {
-    type: ConditionalRulesSchema,
-    default: null,
-  },
-});
+  { _id: false }
+);
 
 const FormSchema = new mongoose.Schema(
   {
@@ -78,6 +87,13 @@ const FormSchema = new mongoose.Schema(
     title: String,
     description: String,
     questions: [QuestionSchema],
+    webhookId: {
+      type: String,
+    },
+    lastWebhookCursor: {
+      type: Number,
+      default: 1,
+    },
   },
   {
     timestamps: true,

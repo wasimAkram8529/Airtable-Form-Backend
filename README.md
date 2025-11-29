@@ -112,13 +112,16 @@ Redirect URL: http://localhost:5000/auth/airtable/callback
   "airtableUserId": "",
   "name": "",
   "email": "",
-  "avatar": "",
-  "lastLoginAt": Date
+  "avatarURL": "",
+  "lastLoginAt": "",
   "airtableTokens": {
     "accessToken": "",
     "refreshToken": "",
     "expireAt": ""
-  }
+  },
+  "createdAt": "",
+  "updatedAt": "",
+  "__v": 0
 }
 ```
 
@@ -126,50 +129,52 @@ Redirect URL: http://localhost:5000/auth/airtable/callback
 
 ```json
 {
-  {
   "_id": "",
-  "owner": "User Id",
+  "owner": "",
   "airtableBaseId": "",
   "airtableTableId": "",
   "title": "",
   "description": "",
+  "webhookId": "",
+  "lastWebhookCursor": 0,
   "questions": [
     {
       "questionKey": "",
       "airtableFieldId": "",
       "label": "",
       "type": "",
-      "required": true,
-      "options": [string],
+      "required": false,
+      "options": [],
       "conditionalRules": {
         "logic": "",
-        "conditions":{
-          "questionKey": "",
-          "operator": "",
-          "value": "Mixed Value"
-        }
+        "conditions": [
+          {
+            "questionKey": "",
+            "operator": "",
+            "value": ""
+          }
+        ]
       }
     }
-  ]
-},
-{
-  "timestamps": true
-}
+  ],
+  "createdAt": "",
+  "updatedAt": "",
+  "__v": 0
 }
 ```
 
 - Response Document
 
 ```json
-{ {
-    "formId": "Form Id",
-    "airtableRecordId": "",
-    "answers": {},
-    "status": ""
-  },
-  {
-    "timestamps": true
-  }
+{
+  "_id": "",
+  "formId": "",
+  "airtableRecordId": "",
+  "answers": {},
+  "status": "",
+  "createdAt": "",
+  "updatedAt": "",
+  "__v": 0
 }
 ```
 
