@@ -3,12 +3,11 @@ const Response = require("../models/Response");
 const Form = require("../models/Form");
 const User = require("../models/User");
 
-let cursor = null;
-
 const createAirtableSyncDB = async (req, res) => {
   if (req.headers["x-airtable-hook-check"]) {
     return res.status(200).send({ success: true });
   }
+
   res.status(200).send({ success: true });
 
   const payload = req.body;
@@ -18,13 +17,19 @@ const createAirtableSyncDB = async (req, res) => {
   const webhookId = payload.webhook.id;
 
   try {
-    const form = await Form.findOne({ airtableBaseId: baseId });
-    if (!form) return;
+    const form = await Form.findOne({ webhookId: webhookId });
+
+    if (!form) {
+      console.log(`No form found for webhook ID: ${webhookId}`);
+      return;
+    }
 
     const user = await User.findById(form.formOwner);
     if (!user) return;
 
     let cursor = form.lastWebhookCursor || 1;
+
+    console.log(`Processing Webhook ${webhookId} starting at cursor ${cursor}`);
 
     const url = `https://api.airtable.com/v0/bases/${baseId}/webhooks/${webhookId}/payloads?cursor=${cursor}`;
 
@@ -34,10 +39,10 @@ const createAirtableSyncDB = async (req, res) => {
 
     const { payloads, cursor: nextCursor } = response.data;
 
-    for (const payload of payloads) {
-      if (payload.changedTablesById) {
-        for (const tableId in payload.changedTablesById) {
-          const changes = payload.changedTablesById[tableId];
+    for (const p of payloads) {
+      if (p.changedTablesById) {
+        for (const tableId in p.changedTablesById) {
+          const changes = p.changedTablesById[tableId];
 
           if (changes.destroyedRecordIds) {
             for (const recordId of changes.destroyedRecordIds) {
@@ -45,7 +50,7 @@ const createAirtableSyncDB = async (req, res) => {
                 { airtableRecordId: recordId },
                 { status: "deletedInAirtable", deletedInAirtable: true }
               );
-              console.log(`Marked record ${recordId} as deleted.`);
+              console.log(`Synced Delete: ${recordId}`);
             }
           }
 
@@ -55,19 +60,23 @@ const createAirtableSyncDB = async (req, res) => {
                 { airtableRecordId: recordId },
                 { status: "updated" }
               );
-              console.log(`Marked record ${recordId} as updated.`);
+              console.log(`Synced Update: ${recordId}`);
             }
           }
         }
       }
     }
 
-    if (nextCursor > cursor) {
+    if (nextCursor && nextCursor > cursor) {
       form.lastWebhookCursor = nextCursor;
       await form.save();
+      console.log(`Cursor updated to ${nextCursor}`);
     }
   } catch (err) {
-    console.error("Webhook processing error:", err.message);
+    console.error(
+      "Webhook processing error:",
+      err.response?.data || err.message
+    );
   }
 };
 

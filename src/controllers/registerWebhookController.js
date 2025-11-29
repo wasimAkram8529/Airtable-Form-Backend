@@ -36,7 +36,7 @@ const registerWebhook = async (req, res) => {
     const text = await response.text();
 
     if (!response.ok) {
-      console.log("Webhook Error:", text);
+      console.log("Webhook Creation Failed:", text);
       return res.status(response.status).send(text);
     }
 
@@ -52,9 +52,7 @@ const registerWebhook = async (req, res) => {
     );
 
     if (!updatedForm) {
-      console.warn(
-        "Warning: Webhook created but Form not found in DB to update."
-      );
+      console.warn("Warning: Webhook created but Form not found in DB.");
     }
 
     res.json({ webhook: result });
