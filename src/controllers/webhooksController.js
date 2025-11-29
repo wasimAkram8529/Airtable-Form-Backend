@@ -80,6 +80,53 @@ const createAirtableSyncDB = async (req, res) => {
   }
 };
 
+const createCleanUp = async (req, res) => {
+  const { baseId } = req.params;
+  const token = req.user.airtableTokens.accessToken;
+
+  try {
+    console.log(`Scanning for ghost webhooks in base: ${baseId}...`);
+
+    const listRes = await fetch(
+      `https://api.airtable.com/v0/bases/${baseId}/webhooks`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const data = await listRes.json();
+
+    const hooks = data.webhooks || [];
+    console.log(`Found ${hooks.length} active webhooks.`);
+
+    if (hooks.length === 0) {
+      return res.json({ message: "No webhooks found. You are clean!" });
+    }
+
+    const results = [];
+    for (const hook of hooks) {
+      console.log(`Deleting webhook: ${hook.id}`);
+      await fetch(
+        `https://api.airtable.com/v0/bases/${baseId}/webhooks/${hook.id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      results.push(hook.id);
+    }
+
+    res.json({
+      success: true,
+      message: `Deleted ${results.length} ghost webhooks.`,
+      deletedIds: results,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createAirtableSyncDB,
+  createCleanUp,
 };
