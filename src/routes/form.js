@@ -7,6 +7,7 @@ const {
   getResponses,
   exportResponses,
 } = require("../controllers/formController");
+const { authUser } = require("../middleware/auth.js");
 
 const router = express.Router();
 
