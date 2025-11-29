@@ -24,7 +24,7 @@ const createAirtableSyncDB = async (req, res) => {
       return;
     }
 
-    const user = await User.findById(form.formOwner);
+    const user = await User.findById(form.owner);
     if (!user) return;
 
     let cursor = form.lastWebhookCursor || 1;
